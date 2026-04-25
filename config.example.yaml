@@ -35,10 +35,10 @@ exchanges:
     secret_key: "YOUR_API_SECRET"
     fee_rate: 0.0002
     
-  bit:
-  #bit.com 用我链接开户,每笔交易省50%手续费 邀请码【OPENSQT】开户链接：https://bitweb.bitexch.io/zh-CN/signup?code=OPENSQT
-    api_key: "YOUR_API_KEY"
-    secret_key: "YOUR_API_SECRET"
+  backpack:
+  #BACKPACK 需要使用 API 公钥 + ED25519 私钥（SecretKey 填 base64 seed/private key）
+    api_key: ""
+    secret_key: ""
     fee_rate: 0.0002
 ####################################
 

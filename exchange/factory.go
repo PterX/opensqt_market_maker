@@ -3,8 +3,10 @@ package exchange
 import (
 	"fmt"
 	"opensqt/config"
+	"opensqt/exchange/backpack"
 	"opensqt/exchange/binance"
 	"opensqt/exchange/bitget"
+	"opensqt/exchange/bybit"
 	"opensqt/exchange/gate"
 )
 
@@ -61,8 +63,35 @@ func NewExchange(cfg *config.Config) (IExchange, error) {
 		}
 		return &gateWrapper{adapter: adapter}, nil
 
+	case "backpack":
+		exchangeCfg, exists := cfg.Exchanges["backpack"]
+		if !exists {
+			return nil, fmt.Errorf("backpack 配置不存在")
+		}
+		cfgMap := map[string]string{
+			"api_key":    exchangeCfg.APIKey,
+			"secret_key": exchangeCfg.SecretKey,
+		}
+		adapter, err := backpack.NewBackpackAdapter(cfgMap, cfg.Trading.Symbol)
+		if err != nil {
+			return nil, err
+		}
+		return &backpackWrapper{adapter: adapter}, nil
+
 	case "bybit":
-		return nil, fmt.Errorf("bybit 尚未实现")
+		exchangeCfg, exists := cfg.Exchanges["bybit"]
+		if !exists {
+			return nil, fmt.Errorf("bybit 配置不存在")
+		}
+		cfgMap := map[string]string{
+			"api_key":    exchangeCfg.APIKey,
+			"secret_key": exchangeCfg.SecretKey,
+		}
+		adapter, err := bybit.NewBybitAdapter(cfgMap, cfg.Trading.Symbol)
+		if err != nil {
+			return nil, err
+		}
+		return &bybitWrapper{adapter: adapter}, nil
 
 	case "edgex":
 		return nil, fmt.Errorf("edgeX 尚未实现")

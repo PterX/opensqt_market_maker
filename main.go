@@ -18,7 +18,7 @@ import (
 )
 
 // Version 版本号
-var Version = "v3.3.1"
+var Version = "v3.4.1"
 
 func main() {
 	logger.Info("🚀 www.OpenSQT.com 做市商系统启动...")

@@ -7,6 +7,6 @@ const (
 	// Gate.io WebSocket URL (USDT永续合约)
 	GateWSURL = "wss://fx-ws.gateio.ws/v4/ws/usdt"
 
-	// 渠道标识
+	// 渠道返佣标识 - 重要：这是返佣渠道码
 	GateChannelID = "opensqt"
 )
