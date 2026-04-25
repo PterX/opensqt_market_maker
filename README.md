@@ -153,6 +153,28 @@ go build -o opensqt
 ./opensqt
 ```
 
+## 📦 版本发布 (Release)
+
+项目现在使用统一版本规范：以 [main.go](main.go#L21) 中的 `Version` 为准，Git Tag 与 GitHub Release 必须和它保持一致。
+
+标准发版文档见 [RELEASE.md](RELEASE.md)。
+
+生成可分发安装包：
+
+```bash
+./scripts/package_release.sh
+```
+
+生成的发行包默认包含：
+
+- 编译后的可执行文件
+- `live_server/` 整个目录
+- `config.example.yaml`
+- `config.yaml`（由示例配置生成，避免泄露本机密钥）
+- `README.md`
+- `ARCHITECTURE.md`
+- `部署教程.pdf`
+
 ## 🏗️ 系统架构 (Architecture)
 
 系统采用模块化设计，核心组件包括：
