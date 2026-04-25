@@ -83,10 +83,14 @@ func (w *WebSocketManager) Start(ctx context.Context, callback OrderUpdateCallba
 // StartPriceStream 启动价格流
 func (w *WebSocketManager) StartPriceStream(ctx context.Context, symbol string, callback func(price float64)) error {
 	// 使用原生 WebSocket 连接（go-binance 的 WsAggTradeServe 有 Bug）
-	// 格式: wss://fstream.binance.com/ws/<symbol>@aggTrade
+	// 新路由优先，旧地址保留为回退，避免 Binance 路由迁移时直接断流
 
 	symbolLower := strings.ToLower(symbol)
-	url := fmt.Sprintf("wss://fstream.binance.com/ws/%s@aggTrade", symbolLower)
+	streamName := fmt.Sprintf("%s@aggTrade", symbolLower)
+	urls := []string{
+		fmt.Sprintf("wss://fstream.binance.com/market/ws/%s", streamName),
+		fmt.Sprintf("wss://fstream.binance.com/ws/%s", streamName),
+	}
 
 	// 使用通道等待首个价格
 	firstPriceCh := make(chan struct{})
@@ -101,17 +105,32 @@ func (w *WebSocketManager) StartPriceStream(ctx context.Context, symbol string, 
 			default:
 			}
 
-			logger.Debug("🔗 [Binance] 正在连接 WebSocket: %s", url)
+			var (
+				conn      *websocket.Conn
+				activeURL string
+				err       error
+			)
 
-			// 导入 gorilla/websocket
-			conn, _, err := websocket.DefaultDialer.Dial(url, nil)
-			if err != nil {
-				logger.Error("❌ [Binance] WebSocket 连接失败: %v，5秒后重试", err)
+			for i, url := range urls {
+				logger.Debug("🔗 [Binance] 正在连接价格 WebSocket: %s", url)
+				conn, _, err = websocket.DefaultDialer.Dial(url, nil)
+				if err == nil {
+					activeURL = url
+					if i > 0 {
+						logger.Warn("⚠️ [Binance] 价格流已回退到兼容地址: %s", url)
+					}
+					break
+				}
+				logger.Warn("⚠️ [Binance] 价格 WebSocket 连接失败: %s, err=%v", url, err)
+			}
+
+			if conn == nil {
+				logger.Error("❌ [Binance] 所有价格 WebSocket 地址连接失败，5秒后重试")
 				time.Sleep(5 * time.Second)
 				continue
 			}
 
-			logger.Info("✅ [Binance] WebSocket 已连接: %s", url) // 读取消息循环
+			logger.Info("✅ [Binance] WebSocket 已连接: %s", activeURL) // 读取消息循环
 			for {
 				select {
 				case <-ctx.Done():
@@ -165,7 +184,7 @@ func (w *WebSocketManager) StartPriceStream(ctx context.Context, symbol string, 
 	// 等待接收首个价格（最多10秒）
 	select {
 	case <-firstPriceCh:
-		logger.Debug("✅ [Binance] 价格流已启动: %s@aggTrade", symbolLower)
+		logger.Debug("✅ [Binance] 价格流已启动: %s", streamName)
 		return nil
 	case <-time.After(10 * time.Second):
 		return fmt.Errorf("等待首个价格超时（10秒）")
